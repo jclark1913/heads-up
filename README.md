@@ -1,6 +1,6 @@
-# Forehead guessing game — specification scaffold
+# Heads Up — playable gesture MVP
 
-Status: draft for implementation. Research checked September 24, 2026.
+Status: milestone 1 implemented. Automated validation passes; physical gesture validation on the Pixel 10a and iPhone 17 Pro is still pending. Platform research checked September 24, 2026.
 
 A phone-based party game: one person holds the screen facing their friends at forehead height, guesses the displayed prompt, and tilts the phone to record a correct answer or pass before time expires.
 
@@ -16,6 +16,7 @@ Delivery must be a PWA. Stable landscape gameplay during flips on iPhone and And
 6. [Decisions and open questions](specs/06-decisions.md) — confirmed requirements and remaining defaults.
 7. [Word banks and Arabic cards](specs/07-word-banks.md) — text/CSV/JSON ingestion, custom-bank storage, starter categories, and right-to-left card text.
 8. [First device trial](specs/08-device-trial.md) — Pixel 10a/iPhone 17 Pro checklist and a reusable observation record.
+9. [Remaining feature build plan](specs/09-remaining-build-plan.md) — implementation tasks, dependencies, acceptance checks, and device gates for milestones 2–4.
 
 ## Working defaults
 
@@ -30,7 +31,7 @@ Delivery must be a PWA. Stable landscape gameplay during flips on iPhone and And
 - Motion controls are the default. Correct/Pass buttons are hidden until the user enables the manual-controls setting; remember that explicit choice locally.
 - When checks reveal a problem, offer relevant permission or landscape guidance first, then an explicit Enable buttons fallback. Do not switch control modes automatically.
 
-The decision log distinguishes confirmed requirements from proposed defaults; English/Arabic cards and custom word banks are in scope. There is no application implementation or completed device validation yet.
+The decision log distinguishes confirmed requirements from proposed defaults. The first playable slice is implemented with two small test banks, motion practice, timed rounds, opt-in manual controls, and local diagnostics. Imports, expanded categories, offline caching, and safe updates remain later milestones. Physical-device validation is pending.
 
 ## Build sequence
 
@@ -40,3 +41,17 @@ The decision log distinguishes confirmed requirements from proposed defaults; En
 4. Finish offline use, safe updates, accessibility/polish, and broader device coverage before release.
 
 The first milestone is ready for owner testing; the second establishes measured gesture acceptance. Small test banks and online-only play are deliberate first-slice limits, not reductions in the final product scope. See the [build plan](specs/05-validation-and-delivery.md) for deliverables and exit checks.
+
+The remaining work is scaffolded in the [task backlog](specs/09-remaining-build-plan.md). Start with HU-01 device observations, track evidence in [device trials](docs/device-trials/README.md), and close the Android/iOS validation gate before implementing HU-03 onward. The backlog prepares feature work while phone testing is pending.
+
+## Run the app
+
+Use Node 22.12+ and `npm install`, then `npm run dev`. For a temporary HTTPS link on your phones, run `npm run phone:test` on Windows and keep this computer awake. Stop it with `npm run phone:test -- -Stop`.
+
+See [testing and HTTPS setup](docs/TESTING.md) for commands, validation evidence, diagnostics, and current limitations. This first build stays online; imports and offline caching follow the gesture trials.
+
+## Deploy to GitHub Pages
+
+GitHub Actions workflows are included for pull-request validation and deployment from `main` after checks pass. Set the repository's **Settings → Pages → Source** to **GitHub Actions**, then run **Deploy to GitHub Pages**. Subsequent pushes to `main` deploy automatically.
+
+See [the deployment guide](docs/DEPLOYMENT.md) for first-time setup, the Pages URL, and a local preview under the repository path.

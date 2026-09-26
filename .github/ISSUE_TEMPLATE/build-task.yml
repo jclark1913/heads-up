@@ -1,0 +1,47 @@
+name: Build-plan task
+description: Track one task from the remaining-feature build plan.
+title: '[HU-XX] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start from specs/09-remaining-build-plan.md. HU-03 onward waits for the recorded Android and iOS G2 gate; milestone 4 also waits for G3. A filed issue does not clear a gate.
+  - type: input
+    id: task-id
+    attributes:
+      label: Build-plan ID
+      description: Use the existing HU ID, adding a part suffix only when splitting a task.
+      placeholder: HU-08
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User-visible outcome and scope
+      description: Copy the task's outcome and boundaries from the build plan, then describe this change.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and gate evidence
+      description: Link prerequisite tasks and device evidence. State Pending when a gate has not passed; implementation must wait for it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks
+      description: Include the task's Done when criteria, applicable T-scenarios, and important failure cases.
+    validations:
+      required: true
+  - type: textarea
+    id: touchpoints
+    attributes:
+      label: Implementation boundaries
+      description: Note affected modules, planned data changes, and constraints to preserve.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Completion evidence
+      description: Add build ID, automated results, physical observations where required, and remaining limitations before closing. Do not treat emulation as a physical pass.
