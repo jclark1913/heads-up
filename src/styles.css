@@ -780,7 +780,8 @@ svg {
   white-space: normal;
   text-wrap: balance;
 }
-.prompt-text[lang='ar'] {
+.prompt-text[lang='ar'],
+.prompt-text:dir(rtl) {
   font-family: 'Geeza Pro', Tahoma, 'Segoe UI', sans-serif;
   font-weight: 700;
   line-height: 1.5;
@@ -992,7 +993,96 @@ svg {
   letter-spacing: normal;
   unicode-bidi: isolate;
 }
+
+.header-actions,
+.screen-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tool-button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.tool-button:hover {
+  background: #183e3609;
+}
+.app-dialog {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.app-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.app-dialog::backdrop {
+  background: #102e27aa;
+}
+.dialog-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.dialog-header h2 {
+  font-size: 1.2rem;
+}
+.dialog-body {
+  padding: 0 20px 20px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.dialog-body .how-to {
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-top: 0;
+  padding: 22px 0;
+}
+.dialog-body .how-to p,
+.dialog-body .how-to strong {
+  font-size: 0.85rem;
+}
+.dialog-body .help-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.dialog-body .site-footer {
+  margin-top: 12px;
+}
+.ready-card .fine-print {
+  display: block;
+  margin-top: 10px;
+}
+.ready-card h2 > span {
+  display: block;
+}
+
 @media (max-width: 700px) {
+  .setup-shell .brand > span:last-child {
+    display: none;
+  }
+  .setup-shell .site-header,
+  .setup-shell .header-actions,
+  .setup-shell .screen-tools {
+    gap: 8px;
+  }
   .page-shell {
     padding: max(20px, env(safe-area-inset-top))
       max(22px, env(safe-area-inset-right))
@@ -1102,7 +1192,7 @@ svg {
   .ready-card h2 {
     font-size: 2.4rem;
   }
-  .ready-card h2 br {
+  .ready-card h2 > span {
     display: none;
   }
   .ready-card h2 em {
@@ -1180,11 +1270,767 @@ svg {
     margin: 4px 0;
   }
 }
+
+/* Phone landscape is a screen, with secondary content in contained panels. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .home-shell,
+  .setup-shell {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    padding: max(12px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+  }
+  .home-shell > .site-header,
+  .setup-shell > .site-header {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+  }
+  .home-shell .brand,
+  .setup-shell .brand {
+    font-size: 1.4rem;
+  }
+  .setup-shell .brand > span:last-child {
+    display: none;
+  }
+  .home-shell > .site-footer,
+  .setup-shell > .site-footer,
+  .home-shell .hero {
+    display: none;
+  }
+  .home-shell > main,
+  .setup-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .home-shell .bank-section {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .home-shell .section-heading {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+  }
+  .home-shell .section-heading h2 {
+    font-size: 1.4rem;
+  }
+  .home-shell .bank-grid {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(min-content, 1fr);
+    gap: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 3px;
+    margin: -3px;
+  }
+  .home-shell .bank-card {
+    min-height: 180px;
+    padding: 16px 24px;
+    border-radius: 20px;
+    gap: 10px;
+  }
+  .home-shell .bank-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .home-shell .bank-card:active {
+    transform: scale(0.985);
+  }
+  .home-shell .bank-card h3 {
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+    margin-bottom: 6px;
+  }
+  .home-shell .bank-card h3[lang='ar'] {
+    font-size: 1.85rem;
+  }
+  .home-shell .bank-card p {
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .home-shell .bank-doodle {
+    display: block;
+    font-size: 26px;
+  }
+  .home-shell .bank-bottom {
+    font-size: 0.75rem;
+  }
+  .home-shell .round-arrow {
+    width: 36px;
+    height: 36px;
+  }
+  .setup-main {
+    gap: 10px;
+  }
+  .setup-heading {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0;
+  }
+  .setup-heading .eyebrow {
+    display: none;
+  }
+  .setup-heading h1 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .setup-heading p:not(.eyebrow) {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+  }
+  .setup-grid {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 12px;
+    margin: 0;
+  }
+  .practice-card,
+  .ready-card {
+    min-height: 0;
+    min-width: 0;
+    padding: 14px 18px;
+    border-radius: 18px;
+  }
+  .practice-card {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding: 12px;
+  }
+  .practice-card > .pill {
+    display: none;
+  }
+  .practice-card h2 {
+    font-size: 1.05rem;
+    margin: 0 0 5px;
+  }
+  .practice-card p,
+  .ready-card p {
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .gesture-pair {
+    justify-content: flex-start;
+    gap: 24px;
+    margin: 10px 0;
+    text-align: start;
+  }
+  .gesture-pair > div {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 2px 8px;
+  }
+  .gesture-icon {
+    grid-row: span 2;
+    width: 36px;
+    height: 36px;
+  }
+  .gesture-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+  .gesture-pair strong {
+    font-size: 0.82rem;
+  }
+  .gesture-pair small {
+    font-size: 0.7rem;
+  }
+  .movement-status {
+    margin: 8px 0;
+  }
+  .practice-card .movement-status {
+    font-size: 0.75rem;
+  }
+  .practice-feedback {
+    gap: 3px;
+    padding-top: 8px;
+  }
+  .practice-feedback strong {
+    font-size: 0.88rem;
+  }
+  .practice-feedback span,
+  .practice-feedback small {
+    font-size: 0.73rem;
+  }
+  .practice-card > .button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+  .ready-card {
+    gap: 10px;
+  }
+  .ready-card > div:first-child {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .ready-card .eyebrow {
+    margin-bottom: 10px;
+  }
+  .ready-card h2 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .ready-card h2 > span {
+    display: inline;
+  }
+  .ready-card > .button {
+    flex-shrink: 0;
+    min-height: 48px;
+  }
+  .ready-card .fine-print {
+    font-size: 0.73rem;
+    line-height: 1.35;
+  }
+}
+@media (orientation: landscape) and (max-height: 360px) {
+  .home-shell,
+  .setup-shell {
+    gap: 8px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .practice-card,
+  .ready-card {
+    padding: 10px 14px;
+  }
+  .gesture-pair {
+    margin: 6px 0;
+  }
+  .ready-card .eyebrow {
+    display: none;
+  }
+  .ready-card h2 {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Local deck library and creation flow. */
+.library-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.library-switch [aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.library-notice,
+.empty-library {
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+.empty-library {
+  grid-column: 1 / -1;
+  padding: 24px;
+}
+.bank-card.custom {
+  background: #e4e6db;
+}
+.bank-card h3 {
+  overflow-wrap: anywhere;
+}
+.deck-dialog {
+  width: min(1000px, calc(100% - 24px));
+}
+.deck-dialog .dialog-header {
+  padding: 10px 18px;
+}
+.deck-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+}
+.paste-grid,
+.preview-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+.deck-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.deck-field input,
+.deck-field select,
+.deck-field textarea,
+.draft-cards input {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: #fffdf7;
+  border: 1px solid #8b9887;
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+  width: 100%;
+  min-width: 0;
+  outline-offset: 2px;
+}
+.paste-field textarea {
+  min-height: 240px;
+  flex: 1;
+  resize: vertical;
+  font-weight: 400;
+}
+.deck-hint {
+  font-size: 0.8rem;
+  color: #546350;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.paste-options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.deck-actions {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+}
+.deck-actions .button-row {
+  justify-content: space-between;
+}
+.field-error {
+  color: #973916;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  font-weight: 550;
+}
+.deck-actions > .field-error {
+  margin-bottom: 8px;
+}
+.preview-summary {
+  font-size: 0.78rem;
+  margin: 12px 0;
+  color: #546350;
+}
+.draft-cards {
+  list-style: none;
+  margin: 0;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.draft-cards li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.draft-cards li > div {
+  flex: 1;
+  min-width: 0;
+}
+.draft-cards small {
+  display: block;
+  margin-top: 4px;
+}
+.card-number {
+  min-width: 22px;
+  padding-top: 10px;
+  font-size: 0.8rem;
+}
+.card-editor {
+  min-width: 0;
+}
+.card-sample-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card-sample {
+  background: var(--yellow);
+  height: 210px;
+  padding: 14px;
+  border-radius: 16px;
+}
+.card-sample .prompt-text {
+  line-height: 1.4;
+}
+.deck-dialog .icon-button {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+}
+.deck-dialog [aria-invalid='true'] {
+  border-color: #973916;
+}
+.game-deck {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .paste-grid,
+  .preview-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .deck-content {
+    padding: 16px;
+  }
+  .deck-dialog {
+    max-height: calc(100dvh - 16px);
+  }
+  .deck-actions {
+    padding: 10px 16px;
+  }
+  .deck-actions .button {
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+  .bank-section .section-heading {
+    gap: 8px;
+  }
+  .bank-section .section-heading h2 {
+    font-size: 1.15rem;
+  }
+  .bank-section .section-heading > .button {
+    padding: 10px 12px;
+  }
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .home-shell .library-switch {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+  }
+  .home-shell .section-heading h2 {
+    font-size: 1.25rem;
+  }
+  .home-shell .bank-card {
+    min-height: 160px;
+  }
+  .home-shell .bank-card p {
+    display: none;
+  }
+  .home-shell .bank-card h3 {
+    font-size: 1.5rem;
+  }
+  .deck-dialog {
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .deck-content {
+    flex: 1;
+    padding: 12px 18px;
+    overflow: hidden;
+  }
+  .paste-grid,
+  .preview-grid {
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px;
+  }
+  .paste-field {
+    min-height: 0;
+  }
+  .paste-field textarea {
+    min-height: 70px;
+    resize: none;
+  }
+  .paste-options,
+  .card-editor,
+  .card-sample-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 3px;
+  }
+  .paste-options {
+    gap: 10px;
+  }
+  .card-sample {
+    height: 130px;
+    flex-shrink: 0;
+  }
+  .deck-dialog .dialog-header {
+    padding: 6px 18px;
+  }
+  .deck-actions {
+    padding: 8px 18px;
+  }
+  .deck-actions .button {
+    min-height: 44px;
+    padding: 8px 16px;
+  }
+  .deck-actions > .field-error {
+    max-height: 2.8em;
+    overflow-y: auto;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 360px) {
+  .home-shell .bank-card {
+    min-height: 140px;
+    padding: 10px 20px;
+    gap: 6px;
+  }
+  .home-shell .bank-top {
+    display: none;
+  }
+}
+
+.paste-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 3px;
+}
+.paste-input > .button {
+  flex-shrink: 0;
+}
+.paste-input .paste-field {
+  flex: 1;
+}
+.paste-input .deck-hint {
+  overflow-wrap: anywhere;
+}
+.csv-header-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 0.9rem;
+}
+.csv-header-control input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+}
+.paste-options {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Saved decks keep play and management as separate, full-size targets. */
+.bank-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 8px;
+}
+.bank-tile .bank-card {
+  width: 100%;
+  flex: 1;
+}
+.manage-deck {
+  width: 100%;
+  flex-shrink: 0;
+}
+.deck-management-actions,
+.deck-conflict {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.deck-management-actions {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.deck-conflict {
+  border: 1px solid #ac663f;
+  background: #fff0df;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.danger-text {
+  color: #973916;
+}
+.card-editor > .button {
+  margin-top: 12px;
+}
+.card-sample-panel > * {
+  flex-shrink: 0;
+}
+
+.setting select {
+  min-height: 44px;
+  max-width: 48%;
+  flex-shrink: 0;
+  border: 1px solid #8b9887;
+  border-radius: 10px;
+  padding: 8px;
+  font: inherit;
+  color: var(--ink);
+  background: #fffdf7;
+}
+.library-switch {
+  flex-wrap: wrap;
+}
+.latest-result-button {
+  margin-left: auto;
+}
+.result-details {
+  margin-top: 8px;
+}
+.result-save-notice {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ac663f;
+  border-radius: 10px;
+  background: #fff0df;
+}
+
+.bank-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bank-actions > .button {
+  flex: 1 1 130px;
+  width: auto;
+  min-height: 44px;
+}
+.share-dialog {
+  width: min(640px, calc(100vw - 24px));
+}
+.share-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-wrap: anywhere;
+}
+.share-body > * {
+  flex-shrink: 0;
+}
+.share-body p {
+  line-height: 1.5;
+  margin: 0;
+}
+.shared-preview h3 {
+  margin: 0 0 6px;
+  font-size: 1.4rem;
+}
+.shared-preview details {
+  margin-top: 10px;
+}
+.shared-preview summary {
+  min-height: 44px;
+  cursor: pointer;
+  padding: 12px 0;
+}
+.shared-cards {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  padding-inline-start: 28px;
+}
+.shared-cards li {
+  padding: 6px;
+  white-space: pre-wrap;
+}
+.share-notice {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f0ead8;
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.share-actions > * {
+  flex: 1 1 150px;
+  min-height: 44px;
+  text-align: center;
+}
+.share-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.share-link-field textarea {
+  width: 100%;
+  min-height: 88px;
+  max-height: 160px;
+  resize: vertical;
+  border: 1px solid #8b9887;
+  border-radius: 10px;
+  padding: 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+  background: #fffdf7;
+  word-break: break-all;
+}
+.qr-panel {
+  text-align: center;
+}
+.qr-panel img {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  margin: 0 auto 8px;
+  background: white;
+}
+.share-body .button {
+  min-height: 44px;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .share-dialog {
+    max-height: calc(100dvh - 16px);
+  }
+  .share-dialog .dialog-header {
+    padding: 8px 18px;
+  }
+  .qr-panel img {
+    width: 260px;
+  }
+}
+
+.shared-cards {
+  padding-inline-start: 0;
+  list-style-position: inside;
+}
+.shared-cards li {
+  text-align: start;
+}
+@media (orientation: landscape) and (max-height: 600px) {
+  .qr-panel img {
+    width: min(260px, calc(100dvh - 150px));
   }
 }

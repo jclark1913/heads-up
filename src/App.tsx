@@ -1,14 +1,13 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { GameController } from './app/controller'
 import type { AppSnapshot, MotionStatus } from './app/controller'
-import { banks } from './content/banks'
+import { isCustomBank } from './content/decks'
+import type { CustomBank } from './content/decks'
+import { DeckCreator } from './DeckCreator'
+import { SharingDialog } from './sharing/SharingDialog'
+import { useSharing } from './sharing/useSharing'
+import { FittedPrompt } from './FittedPrompt'
 import { remaining } from './game/engine'
 import { stageLayout } from './platform/layout'
 
@@ -19,10 +18,12 @@ type IconName =
   | 'up'
   | 'pause'
   | 'settings'
+  | 'close'
   | 'download'
   | 'sound'
   | 'spark'
 const paths: Record<IconName, ReactNode> = {
+  close: <path d="m6 6 12 12M6 18 18 6" />,
   arrow: <path d="M4 12h16m-6-6 6 6-6 6" />,
   check: <path d="m5 12 4 4L19 6" />,
   down: <path d="M12 4v16m-6-6 6 6 6-6" />,
@@ -216,6 +217,27 @@ function Settings({
     <section className="settings-panel" aria-label="Game settings">
       <label className="setting">
         <span>
+          <strong>Round length</strong>
+          <small>
+            {state.scene === 'game'
+              ? 'Choose the length between rounds.'
+              : 'Time starts when the first card appears.'}
+          </small>
+        </span>
+        <select
+          value={state.durationSeconds}
+          disabled={state.scene === 'game'}
+          onChange={(event) =>
+            controller.setDuration(Number(event.target.value))
+          }
+        >
+          <option value={30}>30 seconds</option>
+          <option value={60}>60 seconds</option>
+          <option value={90}>90 seconds</option>
+        </select>
+      </label>
+      <label className="setting">
+        <span>
           <strong>Use buttons instead of motion</strong>
           <small>A friend taps Correct or Pass. Works in portrait, too.</small>
         </span>
@@ -257,28 +279,139 @@ function Footer() {
     </footer>
   )
 }
-function Home({
+function HowTo() {
+  return (
+    <section className="how-to" aria-label="How to play">
+      <div>
+        <span className="step-number">01</span>
+        <p>
+          <strong>Phone up.</strong>
+          <br />
+          Screen out, at your forehead.
+        </p>
+      </div>
+      <div>
+        <span className="step-number">02</span>
+        <p>
+          <strong>Friends give clues.</strong>
+          <br />
+          Act it out. Talk it through.
+        </p>
+      </div>
+      <div>
+        <span className="step-number">03</span>
+        <p>
+          <strong>Take your best guess.</strong>
+          <br />
+          Tilt down for correct. Up to pass.
+        </p>
+      </div>
+    </section>
+  )
+}
+function ScreenTools({
   controller,
   state,
 }: {
   controller: GameController
   state: AppSnapshot
 }) {
-  const [settings, showSettings] = useState(false)
+  const [panel, setPanel] = useState<'settings' | 'help' | null>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const opener = useRef<HTMLButtonElement | null>(null)
+  const titleId = useId()
+  useEffect(() => {
+    const element = dialog.current
+    if (!element) return
+    if (panel && !element.open) element.showModal()
+    else if (!panel && element.open) element.close()
+  }, [panel])
   return (
-    <div className="page-shell">
+    <div className="screen-tools">
+      <button
+        className="tool-button"
+        aria-haspopup="dialog"
+        aria-label="How to play"
+        onClick={(event) => {
+          opener.current = event.currentTarget
+          setPanel('help')
+        }}
+      >
+        Help
+      </button>
+      <button
+        className="icon-button"
+        aria-label="Game settings"
+        aria-haspopup="dialog"
+        onClick={(event) => {
+          opener.current = event.currentTarget
+          setPanel('settings')
+        }}
+      >
+        <Icon name="settings" />
+      </button>
+      <dialog
+        ref={dialog}
+        className="app-dialog"
+        aria-labelledby={titleId}
+        onClose={() => {
+          setPanel(null)
+          opener.current?.focus({ preventScroll: true })
+        }}
+      >
+        <div className="dialog-header">
+          <h2 id={titleId}>
+            {panel === 'settings' ? 'Game settings' : 'How to play'}
+          </h2>
+          <button
+            className="icon-button"
+            aria-label="Close dialog"
+            onClick={() => setPanel(null)}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+        <div className="dialog-body">
+          {panel === 'settings' ? (
+            <Settings controller={controller} state={state} />
+          ) : (
+            <>
+              <HowTo />
+              <InstallHelp />
+              <Diagnostics controller={controller} state={state} />
+              <Footer />
+            </>
+          )}
+        </div>
+      </dialog>
+    </div>
+  )
+}
+function Home({
+  controller,
+  state,
+  share,
+  openLink,
+}: {
+  controller: GameController
+  state: AppSnapshot
+  share: (bank: CustomBank, opener: HTMLElement) => void
+  openLink: (opener: HTMLElement) => void
+}) {
+  const [collection, setCollection] = useState(
+    () =>
+      state.banks.find((bank) => bank.id === state.bankId)?.source ?? 'builtin',
+  )
+  const [managed, setManaged] = useState<CustomBank | null>(null)
+  const managerOpener = useRef<HTMLButtonElement | null>(null)
+  const collectionButton = useRef<HTMLButtonElement>(null)
+  const visibleBanks = state.banks.filter((bank) => bank.source === collection)
+  return (
+    <div className="page-shell home-shell">
       <header className="site-header">
         <Brand />
-        <button
-          className="icon-button"
-          aria-label="Game settings"
-          aria-expanded={settings}
-          onClick={() => showSettings(!settings)}
-        >
-          <Icon name="settings" />
-        </button>
+        <ScreenTools controller={controller} state={state} />
       </header>
-      {settings && <Settings controller={controller} state={state} />}
       <main>
         <section className="hero">
           <div className="hero-copy">
@@ -292,11 +425,11 @@ function Home({
             </h1>
             <p className="intro">
               A phone on your forehead. A room full of clues.
-              <br className="desktop-break" /> How many can you guess in a
-              minute?
+              <br className="desktop-break" /> How many can you guess before
+              time runs out?
             </p>
             <div className="hero-facts">
-              <span>60 seconds</span>
+              <span>{state.durationSeconds} seconds</span>
               <span>2+ players</span>
               <span>Endless bad impressions</span>
             </div>
@@ -306,69 +439,155 @@ function Home({
         <section className="bank-section" aria-labelledby="choose-deck">
           <div className="section-heading">
             <h2 id="choose-deck">Pick your cards</h2>
-            <span className="pill">A LITTLE MIX TO GET STARTED</span>
+            <DeckCreator save={controller.saveBank} />
           </div>
-          <div className="bank-grid">
-            {banks.map((bank) => (
+          <div
+            className="library-switch"
+            role="group"
+            aria-label="Library navigation"
+          >
+            <button
+              className="tool-button"
+              aria-pressed={collection === 'builtin'}
+              onClick={() => setCollection('builtin')}
+            >
+              Starter decks
+            </button>
+            <button
+              className="tool-button"
+              ref={collectionButton}
+              aria-pressed={collection === 'custom'}
+              onClick={() => setCollection('custom')}
+            >
+              My decks (
+              {state.banks.filter((bank) => bank.source === 'custom').length})
+            </button>
+            <button
+              className="tool-button"
+              onClick={(event) => openLink(event.currentTarget)}
+            >
+              Open deck link
+            </button>
+            {state.latestResult && (
               <button
-                className={'bank-card ' + bank.language}
-                key={bank.id}
-                onClick={() => controller.chooseBank(bank.id)}
+                className="tool-button latest-result-button"
+                onClick={controller.viewLatestResult}
               >
-                <div className="bank-top">
-                  <span className="language-label">
-                    {bank.language === 'en' ? 'ENGLISH' : 'ARABIC · العربية'}
-                  </span>
-                  <span className="bank-doodle" aria-hidden="true">
-                    {bank.language === 'en' ? '✳' : 'ا ب'}
-                  </span>
-                </div>
-                <div>
-                  <h3 dir="auto" lang={bank.language}>
-                    {bank.title}
-                  </h3>
-                  <p>{bank.description}</p>
-                </div>
-                <div className="bank-bottom">
-                  <span>
-                    {bank.prompts.length} cards <span>·</span> Test deck
-                  </span>
-                  <span className="round-arrow">
-                    <Icon name="arrow" />
-                  </span>
-                </div>
+                View latest result
               </button>
+            )}
+          </div>
+          {state.resultNotice && (
+            <p className="library-notice" role="status">
+              {state.resultNotice}
+            </p>
+          )}
+          {collection === 'custom' && state.libraryStatus === 'loading' && (
+            <p className="library-notice" role="status">
+              Loading saved decks…
+            </p>
+          )}
+          {state.libraryNotice && (
+            <p className="library-notice" role="status">
+              {state.libraryNotice}{' '}
+              <button
+                className="text-button"
+                disabled={state.libraryStatus === 'loading'}
+                onClick={() => void controller.loadLibrary()}
+              >
+                Retry
+              </button>
+            </p>
+          )}
+          <div className="bank-grid">
+            {visibleBanks.length === 0 && state.libraryStatus !== 'loading' && (
+              <p className="empty-library">
+                Your words belong here. Create a deck from text or a file to get
+                started.
+              </p>
+            )}
+            {visibleBanks.map((bank) => (
+              <div className="bank-tile" key={bank.id}>
+                <button
+                  className={'bank-card ' + (bank.language ?? 'custom')}
+                  onClick={() => controller.chooseBank(bank.id)}
+                >
+                  <div className="bank-top">
+                    <span className="language-label">
+                      {bank.source === 'custom'
+                        ? 'MY DECK'
+                        : bank.language === 'en'
+                          ? 'ENGLISH'
+                          : 'ARABIC · العربية'}
+                    </span>
+                    <span className="bank-doodle" aria-hidden="true">
+                      {bank.language === 'ar' ? 'ا ب' : '✳'}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 dir="auto" lang={bank.language}>
+                      {bank.title}
+                    </h3>
+                    <p>{bank.description}</p>
+                  </div>
+                  <div className="bank-bottom">
+                    <span>
+                      {bank.prompts.length} cards <span>·</span>{' '}
+                      {bank.source === 'custom'
+                        ? 'On this device'
+                        : 'Test deck'}
+                    </span>
+                    <span className="round-arrow">
+                      <Icon name="arrow" />
+                    </span>
+                  </div>
+                </button>
+                {isCustomBank(bank) && (
+                  <div className="bank-actions">
+                    <button
+                      className="button secondary small manage-deck"
+                      aria-label={'Manage ' + bank.title}
+                      onClick={(event) => {
+                        managerOpener.current = event.currentTarget
+                        setManaged(structuredClone(bank))
+                      }}
+                    >
+                      Manage deck
+                    </button>
+                    <button
+                      className="button secondary small"
+                      aria-label={'Share ' + bank.title}
+                      onClick={(event) =>
+                        share(structuredClone(bank), event.currentTarget)
+                      }
+                    >
+                      Share deck
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
+          {managed && (
+            <DeckCreator
+              key={managed.id}
+              save={controller.saveBank}
+              editing={{
+                bank: managed,
+                update: controller.updateBank,
+                remove: controller.deleteBank,
+                reload: controller.reloadBank,
+                onClose: () => {
+                  setManaged(null)
+                  const target = managerOpener.current?.isConnected
+                    ? managerOpener.current
+                    : collectionButton.current
+                  target?.focus({ preventScroll: true })
+                },
+              }}
+            />
+          )}
         </section>
-        <section className="how-to" aria-label="How to play">
-          <div>
-            <span className="step-number">01</span>
-            <p>
-              <strong>Phone up.</strong>
-              <br />
-              Screen out, at your forehead.
-            </p>
-          </div>
-          <div>
-            <span className="step-number">02</span>
-            <p>
-              <strong>Friends give clues.</strong>
-              <br />
-              Act it out. Talk it through.
-            </p>
-          </div>
-          <div>
-            <span className="step-number">03</span>
-            <p>
-              <strong>Take your best guess.</strong>
-              <br />
-              Tilt down for correct. Up to pass.
-            </p>
-          </div>
-        </section>
-        <InstallHelp />
-        <Diagnostics controller={controller} state={state} />
       </main>
       <Footer />
     </div>
@@ -403,7 +622,7 @@ function Setup({
   controller: GameController
   state: AppSnapshot
 }) {
-  const bank = banks.find((item) => item.id === state.bankId)!
+  const bank = state.banks.find((item) => item.id === state.bankId)!
   const motion = state.mode === 'motion'
   const failed = ['denied', 'unavailable', 'insecure-context'].includes(
     state.motion,
@@ -414,9 +633,12 @@ function Setup({
     <div className="page-shell setup-shell">
       <header className="site-header">
         <Brand />
-        <button className="text-button" onClick={controller.backToBanks}>
-          ← All decks
-        </button>
+        <div className="header-actions">
+          <button className="tool-button" onClick={controller.backToBanks}>
+            ← All decks
+          </button>
+          <ScreenTools controller={controller} state={state} />
+        </div>
       </header>
       <main className="setup-main">
         <div className="setup-heading">
@@ -424,20 +646,26 @@ function Setup({
           <h1 dir="auto" lang={bank.language}>
             {bank.title}
           </h1>
-          <p>20 cards. One minute. Make it a good one.</p>
+          <p>
+            {bank.prompts.length} cards · {state.durationSeconds} seconds
+          </p>
         </div>
         <div className="setup-grid">
-          <section className="practice-card" aria-label="Controls and practice">
+          <section
+            className="practice-card"
+            aria-label="Controls and practice"
+            tabIndex={0}
+          >
             <span className="pill">
               {motion ? 'TILT TO PLAY' : 'BUTTONS ARE ON'}
             </span>
             <h2>
               {motion ? 'A little practice?' : 'Let a friend take control.'}
             </h2>
-            <p>
+            <p className="practice-intro">
               {motion
-                ? 'Screen facing your friends. Keep the phone sideways and upright between guesses.'
-                : 'Your clue-giver taps the answers while you guess. No movement permission needed.'}
+                ? 'Hold sideways, screen facing friends. Return upright between tilts.'
+                : 'A friend taps the answers while you guess. No movement permission needed.'}
             </p>
             <div className="gesture-pair">
               <div>
@@ -511,16 +739,17 @@ function Setup({
             )}
           </section>
           <section className="ready-card">
-            <div>
+            <div tabIndex={0}>
               <p className="eyebrow">WHEN YOU’RE READY</p>
               <h2>
-                Forehead.
-                <br />
-                Friends.
-                <br />
-                <em>Go.</em>
+                <span>Forehead.</span> <span>Friends.</span> <em>Go.</em>
               </h2>
               <p>You’ll get a three-second countdown to get into position.</p>
+              <span className="fine-print">
+                {motion
+                  ? 'Return upright after each answer to reveal the next card.'
+                  : 'Buttons stay on until you turn them off in settings.'}
+              </span>
             </div>
             {motion && !state.view.landscape && <RotationHelp />}
             <button
@@ -530,61 +759,10 @@ function Setup({
             >
               Start round <Icon name="arrow" />
             </button>
-            <span className="fine-print">
-              {motion
-                ? 'Return upright after each answer to reveal the next card.'
-                : 'Buttons stay on until you turn them off in settings.'}
-            </span>
           </section>
         </div>
-        <details className="help-details">
-          <summary>Sound & controls</summary>
-          <Settings controller={controller} state={state} />
-        </details>
-        <Diagnostics controller={controller} state={state} />
       </main>
       <Footer />
-    </div>
-  )
-}
-function FittedPrompt({
-  text,
-  language,
-  hiddenFromReader,
-}: {
-  text: string
-  language: string
-  hiddenFromReader: boolean
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    const element = ref.current!
-    const fit = () => {
-      let size = Math.min(112, Math.max(32, element.clientWidth / 7))
-      element.style.fontSize = size + 'px'
-      while (
-        (element.scrollHeight > element.clientHeight + 1 ||
-          element.scrollWidth > element.clientWidth + 1) &&
-        size > 24
-      ) {
-        size -= 2
-        element.style.fontSize = size + 'px'
-      }
-    }
-    fit()
-    const observer = new ResizeObserver(fit)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [text])
-  return (
-    <div
-      className="prompt-text"
-      ref={ref}
-      dir="auto"
-      lang={language}
-      aria-hidden={hiddenFromReader}
-    >
-      {text}
     </div>
   )
 }
@@ -667,7 +845,7 @@ function Game({
   state: AppSnapshot
 }) {
   const round = state.round!
-  const bank = banks.find((item) => item.id === state.bankId)!
+  const bank = state.roundBank!
   if (round.phase === 'interrupted')
     return <Interrupted controller={controller} state={state} />
   const layout = stageLayout(state.view, state.lockedAngle)
@@ -693,7 +871,7 @@ function Game({
     >
       <div className="game-top">
         <span className="game-deck">
-          {bank.language === 'ar' ? 'ARABIC MIX' : 'A LITTLE OF EVERYTHING'}
+          <bdi>{bank.title}</bdi>
         </span>
         <span
           className={
@@ -791,7 +969,7 @@ function Game({
             </span>
             <span>
               {preparing
-                ? '60 seconds of good guesses'
+                ? round.durationMs / 1000 + ' seconds of good guesses'
                 : round.answers.filter((item) => item.outcome === 'correct')
                     .length + ' correct'}
             </span>
@@ -811,22 +989,24 @@ function Results({
   controller: GameController
   state: AppSnapshot
 }) {
-  const round = state.round!
-  const correct = round.answers.filter(
+  const result = state.latestResult!
+  const correct = result.answers.filter(
     (answer) => answer.outcome === 'correct',
   ).length
-  const passed = round.answers.filter(
+  const passed = result.answers.filter(
     (answer) => answer.outcome === 'passed',
   ).length
-  const bank = banks.find((item) => item.id === state.bankId)!
+  const bank = result.deck
+  const elapsedSeconds = Math.ceil(result.elapsedActiveMs / 1000)
+  const source = state.banks.find((item) => item.id === bank.id)
   return (
     <div className="page-shell results-shell">
       <header className="site-header">
         <Brand />
         <span className="pill">
-          {round.finishReason === 'ended-by-user'
+          {result.finishReason === 'ended-by-user'
             ? 'ROUND ENDED EARLY'
-            : round.finishReason === 'deck-exhausted'
+            : result.finishReason === 'deck-exhausted'
               ? 'ALL CARDS PLAYED'
               : 'TIME’S UP'}
         </span>
@@ -837,22 +1017,46 @@ function Results({
           <h1>Nice guessing.</h1>
           <div className="score-number">
             {correct}
-            <span>correct guesses</span>
+            <span>{correct === 1 ? 'correct guess' : 'correct guesses'}</span>
             <Icon name="spark" size={48} />
           </div>
           <p>
             {passed} passed
-            {round.answers.some((answer) => answer.outcome === 'unanswered')
+            {result.answers.some((answer) => answer.outcome === 'unanswered')
               ? ' · 1 unanswered'
               : ''}{' '}
-            · {round.answers.length} cards shown
+            · {result.answers.length}{' '}
+            {result.answers.length === 1 ? 'card' : 'cards'} shown
           </p>
+          <p className="result-details">
+            {result.durationSeconds}-second round · {elapsedSeconds}{' '}
+            {elapsedSeconds === 1 ? 'second' : 'seconds'} played
+            {result.finishReason === 'ended-by-user' ? ' · Incomplete' : ''}
+          </p>
+          <p className="result-details">
+            <time dateTime={result.finishedAt}>
+              {new Date(result.finishedAt).toLocaleString()}
+            </time>
+          </p>
+          {state.resultNotice && (
+            <p className="result-save-notice" role="status">
+              {state.resultNotice}
+            </p>
+          )}
+          {!source && state.libraryStatus !== 'loading' && (
+            <p>The source deck is unavailable. Your round is still here.</p>
+          )}
+          {source && source.version !== bank.version && (
+            <p>This deck has changed. Play again uses its current cards.</p>
+          )}
           <div className="button-row">
-            <button className="button primary" onClick={controller.replay}>
-              Play again <Icon name="arrow" />
-            </button>
+            {source && (
+              <button className="button primary" onClick={controller.replay}>
+                Play again <Icon name="arrow" />
+              </button>
+            )}
             <button className="button secondary" onClick={controller.home}>
-              Change deck
+              {source ? 'Change deck' : 'Back to decks'}
             </button>
           </div>
         </section>
@@ -864,7 +1068,7 @@ function Results({
             </span>
           </div>
           <ol>
-            {round.answers.map((answer) => (
+            {result.answers.map((answer) => (
               <li key={answer.id}>
                 <span dir="auto" lang={bank.language}>
                   {answer.text}
@@ -883,7 +1087,7 @@ function Results({
               </li>
             ))}
           </ol>
-          {round.answers.length === 0 && (
+          {result.answers.length === 0 && (
             <p>No cards were answered this time. Ready for another go?</p>
           )}
         </section>
@@ -899,6 +1103,7 @@ export function App({ instance }: { instance?: GameController }) {
     controller.subscribe,
     controller.getSnapshot,
   )
+  const sharing = useSharing(state.scene)
   useEffect(() => controller.connect(), [controller])
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -924,11 +1129,34 @@ export function App({ instance }: { instance?: GameController }) {
     window.addEventListener('keydown', keydown)
     return () => window.removeEventListener('keydown', keydown)
   }, [controller, state.scene, state.round?.phase, state.mode])
-  if (state.scene === 'setup')
-    return <Setup controller={controller} state={state} />
-  if (state.scene === 'game')
-    return <Game controller={controller} state={state} />
-  if (state.scene === 'results')
-    return <Results controller={controller} state={state} />
-  return <Home controller={controller} state={state} />
+  const screen =
+    state.scene === 'setup' ? (
+      <Setup controller={controller} state={state} />
+    ) : state.scene === 'game' ? (
+      <Game controller={controller} state={state} />
+    ) : state.scene === 'results' ? (
+      <Results controller={controller} state={state} />
+    ) : (
+      <Home
+        controller={controller}
+        state={state}
+        share={(bank, opener) =>
+          sharing.setRequest({ kind: 'send', bank, opener })
+        }
+        openLink={(opener) => sharing.setRequest({ kind: 'receive', opener })}
+      />
+    )
+  return (
+    <>
+      {screen}
+      {sharing.request && (
+        <SharingDialog
+          request={sharing.request}
+          controller={controller}
+          state={state}
+          close={() => sharing.setRequest(null)}
+        />
+      )}
+    </>
+  )
 }

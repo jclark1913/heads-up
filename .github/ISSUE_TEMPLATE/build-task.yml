@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Start from specs/09-remaining-build-plan.md. HU-03 onward waits for the recorded Android and iOS G2 gate; milestone 4 also waits for G3. A filed issue does not clear a gate.
+        Start from specs/09-remaining-build-plan.md. HU-03 onward waits for the recorded Android and iOS G2 gate; HU-15–18 follows G3, and milestone 4 waits for G3S. See each task's dependencies for execution order. A filed issue does not clear a gate.
   - type: input
     id: task-id
     attributes:

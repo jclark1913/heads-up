@@ -1,6 +1,6 @@
 # Product scope and experience
 
-Status: proposed MVP. Related: [gameplay](02-gameplay.md), [decisions](06-decisions.md).
+Status: product scope includes the playable MVP and backend-free deck sharing. The September 29 decision supersedes the earlier creator-account proposal. Related: [gameplay](02-gameplay.md), [decisions](06-decisions.md), [sharing](10-deck-sharing.md).
 
 ## Purpose
 
@@ -30,13 +30,15 @@ The game takes inspiration from the forehead-guessing format. Public branding, i
 
 **P-10 — English and Arabic cards.** Show one target-language prompt per card. Render Arabic text right to left while keeping the existing interface; no translations or bilingual UI are required. English and Arabic text must also display correctly in import previews, editable fields, and results.
 
-**P-11 — Custom word banks.** Users can paste or import their own lists, preview/correct the cards, save a named bank, and play it offline once the app assets are cached. Provide basic bank management and text-file export. Parsing formats and storage requirements are specified in [W-03–06](07-word-banks.md).
+**P-11 — Custom word banks.** Users can paste or import their own lists, including comma-delimited words/phrases pasted into a text box, preview/correct the cards, save a named bank, and play it offline once the app assets are cached. Offer an explicit Commas option so `cat, dog, New York` becomes three cards while preserving spaces within each phrase. Provide basic bank management and text-file export. Parsing formats and storage requirements are specified in [W-03–06](07-word-banks.md).
 
 **P-12 — Party and classroom use.** Reuse the same game for both audiences. A teacher's target-language list is the lesson content; the existing timer, manual-controls option, and prompt history support classroom play. Do not add student accounts or assess proficiency from game scores.
 
+**P-13 — Share independent decks.** A saved deck can generate a portable link and QR containing its fixed content. No accounts or backend are required. Recipients preview and save a fresh local copy; repeat imports never overwrite edits. Offer link/file fallback for large decks. Links cannot be revoked or updated remotely. See the [sharing spec](10-deck-sharing.md).
+
 ## Screen flow
 
-1. **Home / decks:** starter category banks, My word banks, Add word bank, How to play, settings, and offline readiness. Adding a bank opens paste/file import and preview before Save, then returns to the bank library.
+1. **Home / decks:** starter banks, My decks, Create deck, Open deck link, Help, and settings. Share deck on a saved custom bank opens snapshot review and QR/link generation. Received links show a preview before Save. Incoming links wait for active rounds and open editors.
 2. **Setup:** deck summary, duration, movement explanation, sound test, and the manual-controls setting (off by default, or restored from an explicit saved choice).
 3. **Enable movement / practice:** capability checks, permission button where needed, demonstration, and actual flip feedback. If checks fail, show relevant recovery guidance and offer Enable buttons. Skip this step when the user has explicitly selected manual controls. No scored prompts appear here.
 4. **Ready:** “Hold sideways at your forehead, screen facing your friends.” The player taps Start; the preparation countdown gives time to position the phone.
@@ -49,7 +51,7 @@ The game takes inspiration from the forehead-guessing format. Public branding, i
 
 - Aim for prompts readable by clue-givers roughly 1–2 meters away; validate with physical devices and real groups.
 - Use labeled feedback and icons as well as color. Maintain at least 4.5:1 contrast for ordinary text and 3:1 for large text.
-- Use touch targets at least 44 CSS pixels, safe-area padding, and readable content at increased text size. Setup and results support portrait as well as landscape.
+- Use touch targets at least 44 CSS pixels, safe-area padding, and readable content at increased text size. Setup and results support portrait as well as landscape. Landscape deck selection/setup should fit the viewport with primary actions visible; use contained scroll areas for long content and dialogs for settings/help rather than a long page.
 - Respect reduced-motion preferences; avoid flashing feedback and unnecessary motion effects.
 - Support screen-reader navigation for setup and results. Do not automatically announce a secret prompt in forehead mode; manual mode can provide an explicit prompt-reading option.
 - Sound cues are helpful for the guesser but cannot be guaranteed audible. Provide a sound test; the game remains usable with clue-givers announcing visual feedback.
@@ -57,4 +59,4 @@ The game takes inspiration from the forehead-guessing format. Public branding, i
 
 ## Deferred scope
 
-Online multiplayer, accounts, leaderboards, paid decks, advertisements, camera recording, voice recognition, public bank publishing, and cloud synchronization are outside the proposed MVP. Custom-bank import and basic editing are now included. Automatic translation, bilingual cards, and a translated interface are not required. Decide separately before introducing the infrastructure or permissions for them. Native packaging and app-store distribution are outside the chosen PWA delivery model.
+Online multiplayer, recipient/player accounts, public profiles, leaderboards, paid decks, advertisements, camera recording, voice recognition, public deck discovery, shared editing, and automatic library synchronization remain deferred. Custom-bank import/editing and backend-free QR/link sharing are implemented. Creator accounts, hosted short codes, revocation, and remote publication management are deferred. Automatic translation, bilingual cards, and a translated interface are not required. Native packaging and app-store distribution remain outside the PWA delivery model.

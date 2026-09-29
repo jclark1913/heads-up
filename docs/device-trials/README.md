@@ -1,13 +1,17 @@
 # Device evidence
 
-Status: **Not run**. No physical Android or iOS results are recorded here yet. The [quick checklist](../../specs/08-device-trial.md) is the starting point; the [milestone 2 targets](../../specs/05-validation-and-delivery.md#milestone-2--validate-and-tune-gestures-on-both-phones) define acceptance.
+Status: **Owner reports largely successful trials** (September 25, 2026). Exact build/configuration results and remaining issues are not yet recorded; the individual combinations below remain unverified. The [quick checklist](../../specs/08-device-trial.md) is the starting point; the [milestone 2 targets](../../specs/05-validation-and-delivery.md#milestone-2--validate-and-tune-gestures-on-both-phones) define acceptance.
+
+## Owner layout feedback
+
+The owner reports phone tests worked well and identifies deck selection/setup in landscape as the remaining layout concern: they felt like scrolling a webpage. A viewport-sized deck picker/setup and help/settings dialogs now address that feedback. Automated layout checks pass; physical review of the revised layout is pending. Exact device/build/mode measurements remain unrecorded, so this does not change the measured G2 status below.
 
 ## Required launch combinations
 
-- [ ] Pixel 10a / Chrome tab — Not run; left/right landscape evidence pending.
-- [ ] Pixel 10a / installed app — Not run; left/right landscape evidence pending.
-- [ ] iPhone 17 Pro / Safari tab — Not run; left/right landscape evidence pending.
-- [ ] iPhone 17 Pro / Home Screen — Not run; left/right landscape evidence pending.
+- [ ] Pixel 10a / Chrome tab — Outcome unrecorded; left/right landscape evidence pending.
+- [ ] Pixel 10a / installed app — Outcome unrecorded; left/right landscape evidence pending.
+- [ ] iPhone 17 Pro / Safari tab — Outcome unrecorded; left/right landscape evidence pending.
+- [ ] iPhone 17 Pro / Home Screen — Outcome unrecorded; left/right landscape evidence pending.
 
 Check a combination only when its full measured targets pass in both directions. A quick trial, partial sample, or successful manual game leaves it unchecked. Record exact OS/browser versions in reports; model names alone do not define support.
 
@@ -15,7 +19,7 @@ Check a combination only when its full measured targets pass in both directions.
 
 **Candidate build / URL:** Not yet recorded.
 
-**Evidence links / review date:** None yet. Add report links here after testing; do not prefill passing outcomes.
+**Evidence:** owner feedback in this planning conversation: tests were largely successful. Detailed reports/review date are pending. Add report links and residual issues here; do not infer per-configuration passing outcomes.
 
 ## Record a trial
 

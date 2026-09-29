@@ -1,6 +1,6 @@
 # Deploy to GitHub Pages
 
-The repository is configured for GitHub Actions deployment. The app needs only static hosting; GitHub serves the built `dist` directory over HTTPS.
+The repository is configured for GitHub Actions deployment. GitHub serves the PWA's built `dist` directory over HTTPS. The app and [deck sharing](../specs/10-deck-sharing.md) use only static hosting. QR links carry the cards in the URL fragment and preserve the deployed repository path. No backend, credentials, or sharing-service deployment is needed. Generate links from the permanent site; localhost and temporary preview addresses are unsuitable for lasting cross-device shares.
 
 ## One-time setup
 
@@ -13,7 +13,7 @@ No personal access token or repository secret is required. GitHub supplies the w
 
 ## What runs automatically
 
-- [CI](../.github/workflows/ci.yml) runs on pull requests targeting `main`, when manually requested, and as a required job in the deployment workflow. It checks formatting, TypeScript, ESLint, all unit tests, the production build, and all 15 browser scenarios in Chromium and WebKit.
+- [CI](../.github/workflows/ci.yml) runs on pull requests targeting `main`, when manually requested, and as a required job in the deployment workflow. It checks formatting, TypeScript, ESLint, all unit tests, the production build, and all browser scenarios in Chromium and WebKit.
 - [Deploy to GitHub Pages](../.github/workflows/deploy.yml) runs on every push to `main` and can be started manually from `main`. It waits for CI, builds for the URL reported by GitHub Pages, uploads `dist`, and deploys it. A failed check prevents publication. Manual runs from other branches do not deploy.
 - Only the deployment job receives Pages write and identity-token permissions. Checks use read-only repository access.
 

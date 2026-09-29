@@ -1,10 +1,23 @@
 import { banks, shuffle } from '../content/banks'
+import type { Bank } from '../content/banks'
+import { deckRepository } from '../content/repository'
+import type { DeckRepository } from '../content/repository'
+import type { CustomBank } from '../content/decks'
 import { createRound, remaining, stepRound } from '../game/engine'
 import type { Answer, Clock, Command, Mode, Round } from '../game/engine'
 import { GestureDetector, screenElevation, tuning } from '../motion/detector'
 import type { DetectorSnapshot } from '../motion/detector'
 import { GameEffects } from '../platform/effects'
 import { viewport } from '../platform/layout'
+import {
+  isDuration,
+  loadPreferences,
+  savePreferences,
+} from '../platform/preferences'
+import type { DurationSeconds } from '../platform/preferences'
+import { createResult } from '../game/results'
+import type { RoundResult } from '../game/results'
+import { loadLatestResult, saveLatestResult } from '../platform/results'
 import type { Viewport } from '../platform/layout'
 
 export type MotionStatus =
@@ -12,8 +25,15 @@ export type MotionStatus =
 export interface AppSnapshot {
   scene: 'home' | 'setup' | 'game' | 'results'
   bankId: string
+  banks: Bank[]
+  roundBank: Bank | null
+  libraryStatus: 'loading' | 'ready' | 'error'
+  libraryNotice: string
   mode: Mode
   sound: boolean
+  durationSeconds: DurationSeconds
+  latestResult: RoundResult | null
+  resultNotice: string
   round: Round | null
   motion: MotionStatus
   detector: DetectorSnapshot
@@ -35,7 +55,6 @@ interface Trace {
 type OrientationClass = typeof DeviceOrientationEvent & {
   requestPermission?: () => Promise<'granted' | 'denied'>
 }
-const preferenceKey = 'heads-up.controls.v1'
 const time = (): Clock => ({ mono: performance.now(), wall: Date.now() })
 
 export class GameController {
@@ -55,19 +74,27 @@ export class GameController {
   private effects = new GameEffects()
   private state: AppSnapshot
 
-  constructor() {
-    let mode: Mode = 'motion'
-    let storageNotice = ''
-    try {
-      if (localStorage.getItem(preferenceKey) === 'manual') mode = 'manual'
-    } catch {
-      storageNotice = 'Settings will last for this visit only.'
-    }
+  private libraryLoad: Promise<void> | null = null
+  private libraryRevision = 0
+  private libraryRefresh = false
+  private libraryChannel: BroadcastChannel | null = null
+
+  constructor(private repository: DeckRepository = deckRepository) {
+    const { preferences, notice: storageNotice } = loadPreferences()
+    const { result: latestResult, notice: resultNotice } = loadLatestResult()
+    this.effects.sound = preferences.soundEnabled
     this.state = {
       scene: 'home',
       bankId: banks[0].id,
-      mode,
-      sound: true,
+      banks: [...banks],
+      roundBank: null,
+      libraryStatus: 'loading',
+      libraryNotice: '',
+      mode: preferences.controlMode,
+      sound: preferences.soundEnabled,
+      durationSeconds: preferences.durationSeconds,
+      latestResult,
+      resultNotice,
       round: null,
       motion: 'idle',
       detector: this.detector.snapshot(),
@@ -108,6 +135,14 @@ export class GameController {
   }
   connect = () => {
     if (this.timer) return () => {}
+    try {
+      this.libraryChannel = new BroadcastChannel('heads-up.decks.v1')
+      this.libraryChannel.onmessage = this.refreshLibrary
+    } catch {
+      /* Focus refresh and transaction checks still work without a channel. */
+    }
+    window.addEventListener('focus', this.refreshLibrary)
+    void this.loadLibrary()
     this.timer = setInterval(this.tick, 50)
     window.addEventListener('resize', this.resize)
     window.addEventListener('orientationchange', this.resize)
@@ -117,6 +152,9 @@ export class GameController {
     return () => {
       if (this.timer) clearInterval(this.timer)
       this.timer = null
+      window.removeEventListener('focus', this.refreshLibrary)
+      this.libraryChannel?.close()
+      this.libraryChannel = null
       window.removeEventListener('resize', this.resize)
       window.removeEventListener('orientationchange', this.resize)
       document.removeEventListener('visibilitychange', this.visibility)
@@ -142,12 +180,116 @@ export class GameController {
     else {
       this.resize()
       this.record('visible')
+      void this.loadLibrary()
     }
+  }
+
+  private refreshLibrary = () => {
+    void this.loadLibrary()
+  }
+  private reconcileSelection() {
+    if (this.state.banks.some((bank) => bank.id === this.state.bankId)) return
+    if (this.state.scene === 'game' || this.state.scene === 'results') return
+    if (this.state.scene === 'setup') this.stopMotion()
+    this.state = {
+      ...this.state,
+      scene: 'home',
+      bankId: banks[0].id,
+      round: null,
+    }
+  }
+  private changedLibrary() {
+    this.libraryRevision++
+    this.reconcileSelection()
+    this.emit()
+    try {
+      this.libraryChannel?.postMessage('changed')
+    } catch {
+      /* Saving already committed. */
+    }
+  }
+  loadLibrary = () => {
+    if (this.libraryLoad) {
+      this.libraryRefresh = true
+      return this.libraryLoad
+    }
+    this.state = { ...this.state, libraryStatus: 'loading', libraryNotice: '' }
+    this.emit()
+    this.libraryLoad = (async () => {
+      do {
+        this.libraryRefresh = false
+        const revision = this.libraryRevision
+        try {
+          const { banks: custom, skipped } = await this.repository.list()
+          if (revision !== this.libraryRevision) {
+            this.libraryRefresh = true
+            continue
+          }
+          this.state = {
+            ...this.state,
+            banks: [...banks, ...custom],
+            libraryStatus: 'ready',
+            libraryNotice: skipped
+              ? 'Some saved decks could not be read by this version. Their stored data has been kept.'
+              : '',
+          }
+          this.reconcileSelection()
+        } catch {
+          this.state = {
+            ...this.state,
+            libraryStatus: 'error',
+            libraryNotice:
+              'Your saved decks could not be loaded. Previously loaded decks are still available.',
+          }
+          break
+        }
+      } while (this.libraryRefresh)
+    })().finally(() => {
+      this.libraryLoad = null
+      this.emit()
+    })
+    return this.libraryLoad
+  }
+  saveBank = async (bank: CustomBank) => {
+    await this.repository.add(bank)
+    this.state = {
+      ...this.state,
+      banks: [
+        ...this.state.banks.filter((item) => item.id !== bank.id),
+        structuredClone(bank),
+      ],
+    }
+    this.changedLibrary()
+    this.chooseBank(bank.id)
+  }
+  updateBank = async (bank: CustomBank, expectedVersion: number) => {
+    await this.repository.update(bank, expectedVersion)
+    this.state = {
+      ...this.state,
+      banks: [
+        ...this.state.banks.filter((item) => item.id !== bank.id),
+        structuredClone(bank),
+      ],
+    }
+    this.changedLibrary()
+  }
+  deleteBank = async (id: string, expectedVersion: number) => {
+    await this.repository.remove(id, expectedVersion)
+    this.state = {
+      ...this.state,
+      banks: this.state.banks.filter((bank) => bank.id !== id),
+    }
+    this.changedLibrary()
+  }
+  reloadBank = async (id: string) => {
+    const bank = await this.repository.get(id)
+    await this.loadLibrary()
+    return bank
   }
 
   chooseBank = (bankId: string) => {
     if (
-      !banks.some((bank) => bank.id === bankId) ||
+      !this.state.banks.some((bank) => bank.id === bankId) ||
       this.state.scene === 'game'
     )
       return
@@ -182,9 +324,42 @@ export class GameController {
       this.emit()
     }
   }
+  private persistPreferences() {
+    const storageNotice = savePreferences({
+      schemaVersion: 1,
+      controlMode: this.state.mode,
+      soundEnabled: this.state.sound,
+      durationSeconds: this.state.durationSeconds,
+    })
+    this.state = { ...this.state, storageNotice }
+  }
+  setDuration = (seconds: number) => {
+    if (
+      !isDuration(seconds) ||
+      (this.state.round && this.state.round.phase !== 'finished')
+    )
+      return
+    this.state = { ...this.state, durationSeconds: seconds }
+    this.persistPreferences()
+    this.emit()
+  }
+  viewLatestResult = () => {
+    if (this.state.scene !== 'home' || !this.state.latestResult) return
+    this.stopMotion()
+    this.state = {
+      ...this.state,
+      scene: 'results',
+      round: null,
+      roundBank: null,
+      bankId: this.state.latestResult.deck.id,
+      lockedAngle: null,
+    }
+    this.emit()
+  }
   setSound = (sound: boolean) => {
     this.effects.sound = sound
     this.state = { ...this.state, sound }
+    this.persistPreferences()
     if (sound) {
       this.effects.unlockAudio()
       this.effects.cue('start')
@@ -215,11 +390,7 @@ export class GameController {
       mode,
       lockedAngle: mode === 'manual' ? null : this.state.lockedAngle,
     }
-    try {
-      localStorage.setItem(preferenceKey, mode)
-    } catch {
-      this.state.storageNotice = 'Settings will last for this visit only.'
-    }
+    this.persistPreferences()
     if (round?.phase === 'interrupted') this.command({ type: 'mode', mode })
     this.record('mode', mode)
     this.emit()
@@ -408,7 +579,15 @@ export class GameController {
         this.effects.cue('end')
         this.stopMotion()
         void this.effects.keepAwake(false)
-        this.state = { ...this.state, scene: 'results', lockedAngle: null }
+        const latestResult = createResult(next, this.state.roundBank!)
+        const resultNotice = saveLatestResult(latestResult)
+        this.state = {
+          ...this.state,
+          scene: 'results',
+          lockedAngle: null,
+          latestResult,
+          resultNotice,
+        }
       }
       this.emit()
     }
@@ -452,16 +631,19 @@ export class GameController {
       return
     this.effects.unlockAudio()
     this.detector.reset()
-    const bank = banks.find((item) => item.id === this.state.bankId)!
+    const bank = this.state.banks.find((item) => item.id === this.state.bankId)
+    if (!bank?.prompts.length) return
     this.state = {
       ...this.state,
       scene: 'game',
+      roundBank: structuredClone(bank),
       lockedAngle: this.state.mode === 'motion' ? this.state.view.angle : null,
       round: createRound(
         crypto.randomUUID(),
         shuffle(bank.prompts),
         this.state.mode,
         time(),
+        this.state.durationSeconds * 1000,
       ),
     }
     this.record('round-start', { bank: bank.id, mode: this.state.mode })
@@ -518,7 +700,12 @@ export class GameController {
     this.emit()
   }
   replay = () => {
-    const bankId = this.state.bankId
+    if (this.state.scene !== 'results' || !this.state.latestResult) return
+    const bankId = this.state.latestResult.deck.id
+    if (!this.state.banks.some((bank) => bank.id === bankId)) {
+      this.home()
+      return
+    }
     this.state = { ...this.state, scene: 'results' }
     this.chooseBank(bankId)
   }

@@ -1,6 +1,6 @@
 # Build plan and validation
 
-Status: milestone 1 is implemented, with 28 passing unit tests and 15 passing browser scenarios across Chromium and WebKit. The landscape-transition scenario also passed a focused rerun in all three browser projects. Desktop browser checks and synthetic readings are not physical-phone validation. Milestone 2 is pending trials on the owner's Pixel 10a and iPhone 17 Pro; exact OS and browser versions will be recorded at test time. See [run/test instructions](../docs/TESTING.md).
+Status: milestone 1 and the local TXT/CSV/JSON creation/import flow, saved-deck management, remembered round preferences, and latest results are implemented, with 94 passing unit tests and 111 passing browser scenarios across Chromium and WebKit. The landscape-transition scenario also passed a focused rerun in all three browser projects. Desktop browser checks and synthetic readings are not physical-phone validation. The owner reports largely successful device trials. Exact configurations, build/results, and remaining issues are still to record before declaring milestone 2 complete. See [run/test instructions](../docs/TESTING.md).
 
 ## Delivery approach
 
@@ -62,9 +62,11 @@ If a target fails, keep iterating within this milestone before building the rema
 
 **Deliverable:** a useful party/classroom app using the validated round and gesture path.
 
-Add the basic category library with reviewed English and Arabic banks, 30/60/90-second duration choices, ordinary preferences, latest-result persistence, and custom-bank management. Implement pasted text/CSV/JSON and UTF-8 TXT/CSV/JSON files, explicit text delimiters, shared preview/corrections, IndexedDB saves, and TXT export as described in [W-03–06](07-word-banks.md).
+Add the basic category library with reviewed English and Arabic banks, 30/60/90-second duration choices, ordinary preferences, latest-result persistence, and custom-bank management. Implement pasted text/CSV/JSON and UTF-8 TXT/CSV/JSON files, explicit text delimiters including comma-delimited paste, shared preview/corrections, IndexedDB saves, and TXT export as described in [W-03–06](07-word-banks.md).
 
-**Exit gate:** a teacher or host can bring an English or Arabic list from a laptop to a phone, preview/correct it, save a named bank, play it, and export/reimport it without losing spelling or diacritics. Failed saves retain the draft; bank edits never mutate an active round. Parser/lifecycle cases T-16–17 pass. Repeat a short gesture smoke test on both phones after UI changes; no translation or separate classroom mode is introduced.
+After local bank management, add [backend-free sharing](10-deck-sharing.md) through revised HU-15–18: fixed QR/link snapshots, preview, independent copies, and file fallback. The owner prioritized sharing ahead of starter categories. Complete T-19–22 for G3S; offline launch follows in milestone 4.
+
+**Exit gate (G3 plus G3S):** a teacher or host can bring an English or Arabic list from a laptop to a phone, preview/correct it, save a named bank, play it, and export/reimport it without losing spelling or diacritics. Failed saves retain the draft; bank edits never mutate an active round. Parser/lifecycle cases T-16–17 and sharing cases T-19–22 pass. Shared snapshots remain fixed, repeat imports preserve edits, and oversized lists use file fallback. Repeat a short gesture smoke test on both phones after UI changes; no translation or separate classroom mode is introduced.
 
 ## Milestone 4 — Offline PWA and release readiness
 
@@ -74,9 +76,9 @@ Add service-worker caching, verified offline readiness, safe updates between rou
 
 Expand physical coverage beyond the owner's two recent phones before advertising broad support: include the oldest iOS/browser combination intended for support, a current stable iPhone configuration, and a second Android manufacturer with a less powerful device. The Pixel counts as one Android device. If that wider coverage is unavailable, keep support claims limited to the recorded configurations and leave wider certification pending.
 
-**Exit gate:** a confirmed cached install can cold-launch and finish a round in airplane mode with bundled/custom banks and required assets; an app update preserves user banks and never reloads a live round. Validate both tab and installed launch. Repeat milestone 2 gesture targets for every configuration claimed as supported, and run interruption, fallback, accessibility, and update/storage scenarios. Record exact support versions and resolve launch-blocking decisions in the [decision log](06-decisions.md).
+**Exit gate:** a confirmed cached install can cold-launch and finish a round in airplane mode with bundled/custom/received banks and required assets without an account; an app update preserves user banks and never reloads a live round. Validate both tab and installed launch. Repeat milestone 2 gesture targets for every configuration claimed as supported, and run interruption, fallback, accessibility, sharing isolation, and update/storage scenarios, including T-23. Record exact support versions and resolve launch-blocking decisions in the [decision log](06-decisions.md).
 
-PWA delivery remains fixed. Unresolved iPhone or Android core-play failures block a public release. No milestone depends on a native wrapper, accounts, or a backend.
+PWA delivery remains fixed. Unresolved iPhone or Android core-play failures block a public release. Native wrappers remain out of scope. Sharing remains backend-free; portable links and independent local copies work with the static Pages deployment.
 
 ## Acceptance scenarios
 
@@ -110,16 +112,27 @@ PWA delivery remains fixed. Unresolved iPhone or Android core-play failures bloc
 
 **T-15 — Arabic cards (P-10, W-01, W-07).** Play and review English and Arabic banks in both landscape directions and manual portrait mode. Check Arabic joining, vowel marks, mixed-script names, parentheses, digits, line wrapping, and longest permitted prompts in the real UI and offline. English UI remains unchanged; no translated companion card is shown. Gesture meanings stay identical. Review Arabic rendering with a fluent Arabic reader.
 
-**T-16 — Import and preview (P-11, W-03–04).** Exercise pasted text/CSV/JSON and all three file formats, UTF-8 with/without BOM, LF/CRLF, blank entries, exact duplicates, distinct diacritics, malformed encoding, and quoted CSV fields. Lines mode preserves 'New York' as one card; All whitespace splits it visibly into two. Test repeated spaces, tabs, and Arabic lists without dropping diacritics/joining characters. Selecting a CSV column/header preserves the intended card text; CSV quoting is unaffected by text delimiter settings. JSON arrays and title/words objects yield the intended prompts; unsupported shapes, non-string entries, and syntax errors are identified without coercion or parser fallback. Multiline CSV cells/JSON strings are normalized visibly. Changing parsing options regenerates from the original input and confirms before discarding preview edits. Invalid/oversized entries are identified, never silently truncated. Render HTML-like input as literal text. Cancel saves nothing; Save creates only the reviewed bank. Test one-card and maximum-size banks.
+**T-16 — Import and preview (P-11, W-03–04).** Exercise pasted text/CSV/JSON and all three file formats, UTF-8 with/without BOM, LF/CRLF, blank entries, exact duplicates, distinct diacritics, malformed encoding, and quoted CSV fields. Lines mode preserves 'New York' as one card; All whitespace splits it visibly into two. In the text box, Commas turns `cat, dog, New York` into three cards without a file/header/column step. Test ordinary and Arabic commas, mixed comma/newline lists, surrounding spaces, repeated/leading/trailing delimiters, empty-entry counts, duplicates, and diacritics. Lines preserves literal commas; Commas does not treat quotes as escapes. A card containing a comma can instead be imported via Lines, quoted CSV, or JSON. Test repeated spaces, tabs, and Arabic lists without dropping diacritics/joining characters. Selecting a CSV column/header preserves the intended card text; CSV quoting is unaffected by text delimiter settings. JSON arrays and title/words objects yield the intended prompts; unsupported shapes, non-string entries, and syntax errors are identified without coercion or parser fallback. Multiline CSV cells/JSON strings are normalized visibly. Changing parsing options regenerates from the original input and confirms before discarding preview edits. Invalid/oversized entries are identified, never silently truncated. Render HTML-like input as literal text. Cancel saves nothing; Save creates only the reviewed bank. Test one-card and maximum-size banks.
 
 **T-17 — Custom-bank lifecycle (W-05–06).** Save, rename, edit, export/reimport, explicitly replace, and delete a custom bank. A running round retains its original snapshot. Test failed/quota-exceeded saves, app update/migration, offline reload, and separate browser storage. Failed saving keeps the draft/export available. Text export round-trips Arabic spelling and diacritics; app cache updates leave saved user banks intact.
 
 **T-18 — Classroom trial (P-12, W-08).** A teacher imports a target-language list and runs a round with learners using existing timer/control settings. Results show prompts for debrief, without translation, student identities, or proficiency claims. A short bank ending before the timer is understandable. Record reading and setup difficulties before changing the shared game flow.
 
+**T-19 — Account-free sharing (P-13, S-01, S-06).** Create/import/play/share without sign-in or a service. Review a saved snapshot before generating its link. Cancel preserves local data. Check missing compression support and malformed links; provide file fallback.
+
+**T-20 — Portable content contracts (S-02, S-04, A-09).** Round-trip exact English/Arabic text through gzip/base64url. Reject unknown versions/fields, invalid UTF-8, duplicate/non-string/overlong cards, oversized links, and decompression bombs. Shared payloads exclude source files, local IDs, results, preferences, and diagnostics. Validate the Pages repository path. Verify actual QR decoding and the density fallback.
+
+**T-21 — Receiving and device transfer (S-02–03).** Open QR/link targets or paste links in fresh Android/iOS tab/installed sessions. Preview cards, save with fresh IDs, and play. Repeated opening offers the edited local copy or another fresh copy. Failed saves keep preview/export. Incoming links wait for rounds and drafts. Clipboard/share-sheet cancellation keeps manual copy and export usable.
+
+**T-22 — Snapshots and fallbacks (S-04–05, A-09).** Local edits/deletion leave existing shared content unchanged. Identical content is recognized via fingerprint, without proving authorship. All words remain available through TXT when QR/link limits are exceeded. Explain that links can be forwarded and cannot be revoked. Check native QR scanning/downloads and file import on both phones.
+
+**T-23 — Offline play and upgrades (S-06, A-06–09).** Once app caching is implemented and verified, cold-launch/play received decks offline. Upgrades preserve banks and optional fingerprint provenance. Decode links locally after the app loads; no lookup service is required. Before caching exists, do not promise offline launch.
+
 ## Test layers and evidence
 
 - Unit tests: pure engine invariants, deadline races, deck validation, and gesture trace replay. Use synthetic traces plus consented development recordings; preserve timestamps and expected events.
 - Browser tests: manual user flow, rendering, denied/missing capability adapters, offline behavior, storage, and update transitions. Browser sensor emulation verifies wiring, not physical accuracy or iOS permissions.
+- Sharing tests: schema and byte limits, actual QR decoding, fresh recipient contexts, snapshot independence, storage failures, and deferred incoming links. Physical camera/native-sheet behavior still requires device evidence.
 - Physical tests: actual permission prompts, sign/mapping, comfort, accidental triggers, both landscape orientations, sleep/audio, and installed launch differences.
 - Small group trial: observe whether new players can begin and finish without coaching beyond the app's instructions. Record confusion and accidental passes; adjust tutorials and thresholds as needed.
 

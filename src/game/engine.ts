@@ -20,6 +20,8 @@ export interface Round {
   displayed: boolean
   answers: PlayedPrompt[]
   actionIds: string[]
+  startedAt: number | null
+  finishedAt: number | null
   durationMs: number
   remainingMs: number
   prepareUntil: number
@@ -68,6 +70,8 @@ export function createRound(
     displayed: false,
     answers: [],
     actionIds: [],
+    startedAt: null,
+    finishedAt: null,
     durationMs,
     remainingMs: durationMs,
     prepareUntil: now.mono + 3000,
@@ -101,6 +105,7 @@ function finish(round: Round, why: Round['finishReason']): Round {
   return {
     ...round,
     phase: 'finished',
+    finishedAt: round.lastClock.wall,
     displayed: false,
     answers,
     deadlineMono: null,
@@ -201,6 +206,7 @@ export function stepRound(
     return {
       ...round,
       phase: 'playing',
+      startedAt: round.startedAt ?? now.wall,
       displayed: true,
       deadlineMono: now.mono + round.remainingMs,
       deadlineWall: now.wall + round.remainingMs,

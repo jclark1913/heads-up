@@ -5,7 +5,10 @@ export interface Prompt {
 export interface Bank {
   id: string
   title: string
-  language: 'en' | 'ar'
+  schemaVersion: 1
+  version: number
+  source: 'builtin' | 'custom'
+  language?: 'en' | 'ar'
   description: string
   prompts: Prompt[]
 }
@@ -59,6 +62,9 @@ const words = {
 export const banks: Bank[] = [
   {
     id: 'en-mix',
+    schemaVersion: 1,
+    version: 1,
+    source: 'builtin',
     title: 'A little of everything',
     language: 'en',
     description: 'Animals, everyday things & a little imagination.',
@@ -66,6 +72,9 @@ export const banks: Bank[] = [
   },
   {
     id: 'ar-mix',
+    schemaVersion: 1,
+    version: 1,
+    source: 'builtin',
     title: 'قليل من كل شيء',
     language: 'ar',
     description: 'The same easygoing mix, with Arabic cards.',

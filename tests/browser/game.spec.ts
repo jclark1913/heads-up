@@ -7,6 +7,7 @@ async function manual(page: Page, arabic = false) {
   await page
     .getByRole('checkbox', { name: /Use buttons instead of motion/ })
     .check()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
   await page.locator(arabic ? '.bank-card.ar' : '.bank-card.en').click()
   await page.getByRole('button', { name: 'Start round' }).click()
   await page.clock.runFor(3100)
@@ -162,6 +163,12 @@ test('motion path scores held tilts once and waits for neutral', async ({
     .getByRole('button', { name: 'Enable movement', exact: true })
     .click()
   await feed(page, 0, 90, 700)
+  await expect(
+    page.getByRole('button', { name: 'Start round' }),
+  ).toBeInViewport({ ratio: 1 })
+  await page.screenshot({
+    path: testInfo.outputPath('landscape-practice-ready.png'),
+  })
   await page.getByRole('button', { name: 'Start round' }).click()
   await page.clock.runFor(3100)
   const first = await page.locator('.prompt-text').textContent()
@@ -209,3 +216,129 @@ test('motion path scores held tilts once and waits for neutral', async ({
   await expect(page.locator('.outcome.correct')).toHaveCount(1)
   await expect(page.locator('.outcome.passed')).toHaveCount(1)
 })
+
+for (const viewport of [
+  { width: 844, height: 390 },
+  { width: 740, height: 320 },
+]) {
+  test(`landscape library and setup fit ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport)
+    await page.addInitScript(() =>
+      Object.defineProperty(window, 'DeviceOrientationEvent', {
+        configurable: true,
+        value: undefined,
+      }),
+    )
+    const screenFits = async () => {
+      expect(
+        await page.evaluate(() => ({
+          vertical: document.documentElement.scrollHeight <= innerHeight + 1,
+          horizontal: document.documentElement.scrollWidth <= innerWidth + 1,
+        })),
+      ).toEqual({ vertical: true, horizontal: true })
+    }
+    await page.goto('/')
+    await expect(page.locator('.bank-card.en')).toBeInViewport({ ratio: 1 })
+    await expect(page.locator('.bank-card.ar')).toBeInViewport({ ratio: 1 })
+    await screenFits()
+    await page.screenshot({
+      path: testInfo.outputPath('landscape-library.png'),
+    })
+
+    await page.getByRole('button', { name: 'How to play', exact: true }).click()
+    await expect(
+      page.getByRole('dialog', { name: 'How to play' }),
+    ).toBeVisible()
+    await page
+      .getByText('Device testing & diagnostics', { exact: true })
+      .click()
+    await expect(
+      page.getByRole('checkbox', { name: /Record a local sensor trace/ }),
+    ).toBeVisible()
+    await screenFits()
+    await page.getByRole('button', { name: 'Close dialog' }).click()
+    await expect(
+      page.getByRole('button', { name: 'How to play', exact: true }),
+    ).toBeFocused()
+
+    await page.locator('.bank-card.en').click()
+    await expect(
+      page.getByRole('button', { name: 'Start round' }),
+    ).toBeInViewport({ ratio: 1 })
+    await expect(
+      page.getByRole('button', { name: 'Enable movement', exact: true }),
+    ).toBeInViewport({ ratio: 1 })
+    await screenFits()
+    await page.screenshot({ path: testInfo.outputPath('landscape-setup.png') })
+    await page
+      .getByRole('button', { name: 'Enable movement', exact: true })
+      .click()
+    await expect(
+      page.getByRole('button', { name: 'Start round' }),
+    ).toBeDisabled()
+    await page
+      .getByRole('button', { name: 'Enable buttons', exact: true })
+      .click()
+    await expect(
+      page.getByRole('button', { name: 'Start round' }),
+    ).toBeEnabled()
+
+    await page
+      .getByRole('button', { name: 'Game settings', exact: true })
+      .click()
+    await expect(
+      page.getByRole('dialog', { name: 'Game settings' }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('checkbox', { name: /Use buttons instead of motion/ }),
+    ).toBeChecked()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).not.toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Game settings', exact: true }),
+    ).toBeFocused()
+
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%'
+    })
+    await expect(
+      page.getByRole('button', { name: 'Start round' }),
+    ).toBeInViewport({ ratio: 1 })
+    await screenFits()
+    await page.screenshot({
+      path: testInfo.outputPath('landscape-large-text.png'),
+    })
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = ''
+    })
+    await page.getByRole('button', { name: /All decks/ }).click()
+    await page.locator('.bank-card.ar').click()
+    await expect(page.locator('.setup-heading h1')).toHaveCSS(
+      'direction',
+      'rtl',
+    )
+    await expect(
+      page.getByRole('button', { name: 'Start round' }),
+    ).toBeInViewport({ ratio: 1 })
+    await screenFits()
+    await page.screenshot({
+      path: testInfo.outputPath('landscape-arabic-setup.png'),
+    })
+
+    await page.getByRole('button', { name: /All decks/ }).click()
+    await page.setViewportSize({
+      width: viewport.height,
+      height: viewport.width,
+    })
+    await expect(
+      page.getByRole('heading', { name: /Good company/ }),
+    ).toBeVisible()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true)
+  })
+}

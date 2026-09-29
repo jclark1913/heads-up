@@ -1,6 +1,6 @@
 # First device trial
 
-Status: checklist and blank record only. No physical test results have been recorded.
+Status: the owner reports device tests were largely successful. This checklist remains the record format; exact builds, configurations, measured results, and remaining issues have not yet been supplied. Do not infer that unrecorded combinations passed.
 
 Save observations and retests in the [device evidence folder](../docs/device-trials/README.md). It includes a measured-trial template and the four device/launch combinations needed to close the gate for [remaining feature work](09-remaining-build-plan.md).
 
@@ -11,7 +11,7 @@ Use this with the playable build from [milestone 1](05-validation-and-delivery.m
 - Pixel 10a — Chrome; Android and Chrome versions to be recorded.
 - iPhone 17 Pro — Safari; iOS version to be recorded.
 
-Begin in a normal browser tab at the supplied HTTPS URL. Use the same build on both phones. Record the build ID shown by the app; a result from an older build does not validate a newer one.
+Begin in a normal browser tab at the supplied HTTPS URL. Use the same build on both phones. Record the build ID shown by the app (inside Help on compact landscape screens); a result from an older build does not validate a newer one.
 
 ## Quick first pass on each phone
 
