@@ -1075,6 +1075,13 @@ svg {
 }
 
 @media (max-width: 700px) {
+  /* Font metrics vary by platform; keep both header controls inside the page. */
+  .home-shell > .site-header {
+    flex-wrap: wrap;
+  }
+  .home-shell > .site-header > .screen-tools {
+    margin-left: auto;
+  }
   .setup-shell .brand > span:last-child {
     display: none;
   }

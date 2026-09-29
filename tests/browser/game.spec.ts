@@ -342,3 +342,58 @@ for (const viewport of [
     ).toBe(true)
   })
 }
+
+test('narrow portrait header fits with wider fallback fonts', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/')
+  await expect(
+    page.getByRole('heading', { name: /Good company/ }),
+  ).toBeVisible()
+  for (const font of ['Arial, sans-serif', 'Verdana, sans-serif']) {
+    await page.evaluate((value) => {
+      document.documentElement.style.fontFamily = value
+    }, font)
+    for (const width of [280, 320]) {
+      await page.setViewportSize({ width, height: 740 })
+      const bounds = await page
+        .locator('.home-shell > .site-header')
+        .evaluate((header) => {
+          const box = header.getBoundingClientRect()
+          return {
+            viewport: innerWidth,
+            page: document.documentElement.scrollWidth,
+            right: box.right,
+            controls: [
+              ...header.querySelectorAll('.screen-tools > button'),
+            ].map((button) => {
+              const rect = button.getBoundingClientRect()
+              return {
+                left: rect.left,
+                right: rect.right,
+                width: rect.width,
+                height: rect.height,
+              }
+            }),
+          }
+        })
+      expect(bounds.page, font + ' at ' + width).toBeLessThanOrEqual(
+        bounds.viewport + 1,
+      )
+      for (const control of bounds.controls) {
+        expect(control.left).toBeGreaterThanOrEqual(0)
+        expect(control.right).toBeLessThanOrEqual(bounds.right + 1)
+        expect(control.width).toBeGreaterThanOrEqual(44)
+        expect(control.height).toBeGreaterThanOrEqual(44)
+      }
+    }
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('narrow-portrait-header.png'),
+  })
+  await page.getByRole('button', { name: 'Game settings', exact: true }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'Game settings' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
+})

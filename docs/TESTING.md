@@ -16,7 +16,7 @@ Open the printed localhost URL. Desktop play requires explicitly enabling Use bu
 Useful commands:
 
 - `npm run check`: type check, lint, 115 unit tests, and production build.
-- `npm run test:e2e -- --workers=2`: 141 browser scenarios in Chromium mobile, WebKit mobile, and desktop Chromium. Install browsers once with `npx playwright install chromium webkit`.
+- `npm run test:e2e -- --workers=2`: 144 browser scenarios in Chromium mobile, WebKit mobile, and desktop Chromium. Install browsers once with `npx playwright install chromium webkit`.
 - `npm run format:check`: formatting.
 - `npm run icons`: regenerate checked-in install icons from public/icon.svg.
 - `npm run serve:test`: serve only dist on 127.0.0.1:4173 after building.
@@ -67,6 +67,12 @@ For more detail, open Help from the deck picker or setup, then expand Device tes
 The initial thresholds are tuning candidates: 50-degree tilt, 120 ms dwell, a 15-degree neutral band, and 200 ms neutral rearming. Their physical suitability and the screen-elevation sign in both orientations remain to be established on the actual phones.
 
 The full category library, offline caching, safe updates, broader accessibility certification, and broad device certification remain later milestones. Backend-free deck sharing is implemented. Reload starts at Home, or opens a shared-deck preview if its link contains a deck fragment. This build must stay online; installation does not imply offline readiness.
+
+## Narrow portrait header regression — September 29, 2026
+
+GitHub Actions reported two horizontal-overflow failures after the landscape tests rotated Home back to a 320-pixel portrait viewport. The Home header forced the logo, Help, and settings into one row; wider fallback font metrics could push controls outside the screen. This issue was not caught by the earlier passing Windows font configuration.
+
+The mobile Home header now wraps when needed and keeps its controls right-aligned. No page overflow is hidden and no layout assertions are relaxed. A new regression tests Arial/Verdana fallbacks at 280 and 320 pixels, verifies complete control bounds and 44-pixel targets, and opens settings. It failed before the fix and passes afterward; all nine targeted portrait/rotation scenarios pass locally in Chromium mobile, WebKit mobile, and desktop Chromium. The full rerun also passes: 115 unit tests, 144 browser scenarios, type checking, lint, formatting, and production build. GitHub Actions must still confirm its Linux run after the fix is pushed.
 
 ## Backend-free QR/link sharing — September 29, 2026
 
